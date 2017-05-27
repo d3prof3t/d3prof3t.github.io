@@ -1,0 +1,326 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" type="text/css" href="http://saurabhsharma.io/theme/stylesheet/style.min.css">
+
+  <link rel="stylesheet" type="text/css" href="http://saurabhsharma.io/theme/pygments/monokai.min.css">
+  <link rel="stylesheet" type="text/css" href="http://saurabhsharma.io/theme/font-awesome/css/font-awesome.min.css">
+
+
+    <link href="http://saurabhsharma.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Saurabh Sharma's Blog Atom">
+
+
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index, follow" />
+
+    <!-- Chrome, Firefox OS and Opera -->
+    <meta name="theme-color" content="#333">
+    <!-- Windows Phone -->
+    <meta name="msapplication-navbutton-color" content="#333">
+    <!-- iOS Safari -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<meta name="author" content="Saurabh Sharma" />
+<meta name="description" content="A brief on how Python evaluates function calling strategies." />
+<meta name="keywords" content="python-functions">
+<meta property="og:site_name" content="Saurabh Sharma's Blog"/>
+<meta property="og:title" content="Why Isn't Python Pass-By-Value or Pass-By-Reference?"/>
+<meta property="og:description" content="A brief on how Python evaluates function calling strategies."/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:url" content="http://saurabhsharma.io/posts/2017/03/pass-by-value-or-pass-by-reference"/>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2017-03-28 00:00:00+05:30"/>
+<meta property="article:modified_time" content=""/>
+<meta property="article:author" content="http://saurabhsharma.io/author/saurabh-sharma.html">
+<meta property="article:section" content="Python, Functional Programming"/>
+<meta property="article:tag" content="python-functions"/>
+<meta property="og:image" content="https://s3.ap-south-1.amazonaws.com/saurabhsharma.io/images/me.jpg">
+
+  <title>Saurabh Sharma's Blog &ndash; Why Isn't Python Pass-By-Value or Pass-By-Reference?</title>
+
+</head>
+<body>
+  <aside>
+    <div>
+      <a href="http://saurabhsharma.io">
+        <img src="https://s3.ap-south-1.amazonaws.com/saurabhsharma.io/images/me.jpg" alt="Saurabh Sharma" title="Saurabh Sharma">
+      </a>
+      <h1><a href="http://saurabhsharma.io">Saurabh Sharma</a></h1>
+
+<p>Software Developer</p>
+      <nav>
+        <ul class="list">
+          <li><a href="http://saurabhsharma.io/pages/about-me/#about-me">About Me</a></li>
+          <li><a href="http://saurabhsharma.io/pages/contact/#contact">Contact</a></li>
+
+        </ul>
+      </nav>
+
+      <ul class="social">
+        <li><a class="sc-github" href="https://github.com/d3prof3t" target="_blank"><i class="fa fa-github"></i></a></li>
+        <li><a class="sc-twitter-square" href="https://twitter.com/saurabhpysharma" target="_blank"><i class="fa fa-twitter-square"></i></a></li>
+        <li><a class="sc-linkedin" href="https://linkedin.com/in/saurabhpysharma" target="_blank"><i class="fa fa-linkedin"></i></a></li>
+      </ul>
+    </div>
+
+
+  </aside>
+  <main>
+
+    <nav>
+      <a href="http://saurabhsharma.io">    Home
+</a>
+
+      <a href="/archives.html">Archives</a>
+      <a href="/categories.html">Categories</a>
+      <a href="/tags.html">Tags</a>
+
+      <a href="http://saurabhsharma.io/feeds/all.atom.xml">    Atom
+</a>
+
+    </nav>
+
+<article class="single">
+  <header>
+    <h1 id="pass-by-value-or-pass-by-reference">Why Isn't Python Pass-By-Value or Pass-By-Reference?</h1>
+    <p>
+          Posted on 2017-03-28 in <a href="http://saurabhsharma.io/category/python-functional-programming.html">Python, Functional Programming</a>
+
+
+    </p>
+  </header>
+
+
+  <div>
+    <p>Something as trivial as passing input in the form of arguments to a function and getting the desired output has been prevalent since the existence of functional programming paradigm.</p>
+<p>Some of the popular languages such as C/C++ evaluate functions on the basis of two strategies:</p>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Evaluation_strategy#Call_by_value">Pass by value</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Evaluation_strategy#Call_by_reference">Pass by reference</a></li>
+</ul>
+<p>Python on the other hand, uses a strategy called <code>Pass By Object Reference</code> which means:</p>
+<blockquote>
+<p>The reference to an object is passed by value.</p>
+</blockquote>
+<p><br></p>
+<h2 id="objects-objects-everywhere">Objects objects everywhere...</h2>
+<p>Everything is an object in Python. With that said, even a primitive operation like assignment is influenced by this very concept. Variables in Python are more formally called <code>names</code> and their values represents an <code>object</code>.</p>
+<p>Consider the following snippet for better understanding:</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="mi">140709057226688</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="s1">&#39;some_string&#39;</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="mi">140709057227008</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="mi">140709057226688</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<p><strong>Note</strong>: <code>id()</code> gives the memory location.</p>
+<p><br/>
+In the above snippet we can clearly see that names <code>a</code> and <code>c</code> refer to the same object <code>10</code> located in the same memory location, which basically implies, there is no new memory allocation for an object irrespective of multiple assignments within a particular scope.</p>
+<p>Assignment in Python can be narrowed down to the following:</p>
+<ul>
+<li>it is simply a binding of name to an object</li>
+<li>names are just a reference to an object stored in the memory in a particular scope</li>
+<li>there is nothing such as variables, instead called <code>Names</code> more formally in the Python world</li>
+</ul>
+<p>Depending on the nature of objects, they can be classified into two types:</p>
+<ul>
+<li>Mutable</li>
+<li>Immutable</li>
+</ul>
+<p>Now let's extend this concept into functions, try to understand how do they behave when names are passed in as arguments.</p>
+<hr>
+
+<h2 id="passing-mutable-objects-into-functions">Passing mutable objects into functions</h2>
+<p>Mutable objects, are those whose value can be changed in place. Some of the mutable objects in Python are: list, values in a dictionary etc.</p>
+<p>When reference to a mutable object is passed into a function, its value can be changed in place affecting the caller's scope until no rebinding is done. But when the reference is re-binded to a new object inside the function's scope, then the caller's scope has no information about it. Hence two different objects are created.</p>
+<p>Consider couple of snippets for better clarity:</p>
+<h3 id="snippet-i">Snippet I</h3>
+<p>When the reference to an object remains the same in the function's scope.</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">appender</span><span class="p">(</span><span class="n">some_list</span><span class="p">):</span>
+<span class="o">...</span>     <span class="n">some_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="o">...</span>     <span class="k">return</span> <span class="n">some_list</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">first_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">first_list</span><span class="p">))</span>
+<span class="mi">140271313438536</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">second_list</span> <span class="o">=</span> <span class="n">appender</span><span class="p">(</span><span class="n">first_list</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">second_list</span><span class="p">))</span>
+<span class="mi">140271313438536</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<p>In the above snippet list being a mutable object, it's memory location remains the same throughout even after modifying the object's value within the function's scope.</p>
+<p><br/></p>
+<h3 id="snippet-ii">Snippet II</h3>
+<p>When the reference to a mutable object is re-binded in the function's scope.</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">rebind</span><span class="p">(</span><span class="n">some_list</span><span class="p">):</span>
+<span class="o">...</span>     <span class="n">some_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">70</span><span class="p">]</span>
+<span class="o">...</span>     <span class="k">return</span> <span class="n">some_list</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">first_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">40</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">first_list</span><span class="p">))</span>
+<span class="mi">140133109036872</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">second_list</span> <span class="o">=</span> <span class="n">rebind</span><span class="p">(</span><span class="n">first_list</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">second_list</span><span class="p">))</span>
+<span class="mi">140133109036296</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">first_list</span><span class="p">,</span> <span class="n">second_list</span><span class="p">)</span>
+<span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">40</span><span class="p">]</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">70</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<p>In the above snippet the reference is re-binded to a new object. Hence there is a new object in memory at a different location without affecting the object in the outer scope.</p>
+<p><br/></p>
+<h2 id="passing-immutable-objects-into-functions">Passing immutable objects into functions</h2>
+<p>Unlike mutable object, values of immutable objects can't be changed in place, until they are re-binded. Hence to make any changes to the value of an object reference, a new assignment is done. Some of the immutable objects in Python are: int, string, tuples etc.</p>
+<p>Consider couple of snippets for better clarity:</p>
+<h3 id="snippet-i_1">Snippet I</h3>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">adder</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+<span class="o">...</span>     <span class="k">return</span> <span class="n">num</span> <span class="o">+</span> <span class="mi">10</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">first_num</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">first_num</span><span class="p">))</span>
+<span class="mi">140233839986944</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">second_num</span> <span class="o">=</span> <span class="n">adder</span><span class="p">(</span><span class="n">first_num</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">second_num</span>
+<span class="mi">30</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">second_num</span><span class="p">))</span>
+<span class="mi">140233839987264</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<p>In the above snippet, we can clearly see that <code>num</code> being an immutable object never gets changed in place.</p>
+<h3 id="snippet-ii_1">Snippet II</h3>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">adder</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+<span class="o">...</span>     <span class="n">num</span> <span class="o">=</span> <span class="n">num</span> <span class="o">+</span> <span class="mi">10</span>
+<span class="o">...</span>     <span class="k">return</span> <span class="n">num</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">first_num</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">first_num</span><span class="p">))</span>
+<span class="mi">140233839986944</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">second_num</span> <span class="o">=</span> <span class="n">adder</span><span class="p">(</span><span class="n">first_num</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">second_num</span>
+<span class="mi">30</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">second_num</span><span class="p">))</span>
+<span class="mi">140233839987264</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<p>In the above snippet, it is pretty evident that in order to change an immutable object a new assignment operation has to be done. And this new object is only restricted within the function's local scope and keeps the global scope unaffected.</p>
+<hr>
+
+<h2 id="conclusion">Conclusion</h2>
+<p>Arguments to functions in Python is simply a reference to an object passed by value. Depending on the object being mutable or immutable the operations on that object may or may not require for a new assignment within the function's scope. Under the hood, everything is an object and Python's <a href="https://docs.python.org/3/reference/datamodel.html">Object Data Model</a> forms the basis for the same.</p>
+<p>Would love to hear suggestions and feedback.</p>
+<p>Cheers!</p>
+  </div>
+  <div class="tag-cloud">
+    <p>
+      <a href="http://saurabhsharma.io/tag/python-functions.html">python-functions</a>
+    </p>
+  </div>
+
+  <div class="center social-share">
+    <p>    Like this article? Share it with your friends!
+</p>
+    <div class="addthis_native_toolbox"></div>
+    <div class="addthis_sharing_toolbox"></div>
+  </div>
+
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'saurabhsharma-io';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>
+        Please enable JavaScript to view comments.
+
+</noscript>
+</article>
+
+    <footer>
+<p>
+  &copy; Saurabh Sharma 2017 - This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>
+</p>
+<p>    Powered by <a href="http://getpelican.com" target="_blank">Pelican</a> - <a href="https://github.com/alexandrevicenzi/flex" target="_blank">Flex</a> theme by <a href="http://alexandrevicenzi.com" target="_blank">Alexandre Vicenzi</a>
+</p><p>
+  <a rel="license"
+     href="http://creativecommons.org/licenses/by-sa/4.0/"
+     target="_blank">
+    <img alt="Creative Commons License"
+         title="Creative Commons License"
+         style="border-width:0"
+         src="https://i.creativecommons.org/l/by-sa/4.0/80x15.png"
+         width="80"
+         height="15"/>
+  </a>
+</p>    </footer>
+  </main>
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-96532127-1', 'auto');
+  ga('send', 'pageview');
+</script>
+<!-- End Google Analytics -->
+
+    <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-58d7bd0f1d7e3461" async="async"></script>
+
+
+<script type="application/ld+json">
+{
+  "@context" : "http://schema.org",
+  "@type" : "Blog",
+  "name": " Saurabh Sharma's Blog ",
+  "url" : "http://saurabhsharma.io",
+  "image": "https://s3.ap-south-1.amazonaws.com/saurabhsharma.io/images/me.jpg",
+  "description": "My thoughts and writings on things I care about."
+}
+</script>
+</body>
+</html>

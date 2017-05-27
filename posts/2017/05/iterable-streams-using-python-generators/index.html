@@ -1,0 +1,447 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" type="text/css" href="http://saurabhsharma.io/theme/stylesheet/style.min.css">
+
+  <link rel="stylesheet" type="text/css" href="http://saurabhsharma.io/theme/pygments/monokai.min.css">
+  <link rel="stylesheet" type="text/css" href="http://saurabhsharma.io/theme/font-awesome/css/font-awesome.min.css">
+
+
+    <link href="http://saurabhsharma.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Saurabh Sharma's Blog Atom">
+
+
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index, follow" />
+
+    <!-- Chrome, Firefox OS and Opera -->
+    <meta name="theme-color" content="#333">
+    <!-- Windows Phone -->
+    <meta name="msapplication-navbutton-color" content="#333">
+    <!-- iOS Safari -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<meta name="author" content="Saurabh Sharma" />
+<meta name="description" content="A brief on how to treat huge datasets as streams for efficient processing" />
+<meta name="keywords" content="iterable-streams, iterators-generators, efficient-data-processing">
+<meta property="og:site_name" content="Saurabh Sharma's Blog"/>
+<meta property="og:title" content="Using Iterable Streams for Efficient Data Processing using Python Generators"/>
+<meta property="og:description" content="A brief on how to treat huge datasets as streams for efficient processing"/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:url" content="http://saurabhsharma.io/posts/2017/05/iterable-streams-using-python-generators"/>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2017-05-27 00:00:00+05:30"/>
+<meta property="article:modified_time" content=""/>
+<meta property="article:author" content="http://saurabhsharma.io/author/saurabh-sharma.html">
+<meta property="article:section" content="Python, Data Processing"/>
+<meta property="article:tag" content="iterable-streams"/>
+<meta property="article:tag" content="iterators-generators"/>
+<meta property="article:tag" content="efficient-data-processing"/>
+<meta property="og:image" content="https://s3.ap-south-1.amazonaws.com/saurabhsharma.io/images/me.jpg">
+
+  <title>Saurabh Sharma's Blog &ndash; Using Iterable Streams for Efficient Data Processing using Python Generators</title>
+
+</head>
+<body>
+  <aside>
+    <div>
+      <a href="http://saurabhsharma.io">
+        <img src="https://s3.ap-south-1.amazonaws.com/saurabhsharma.io/images/me.jpg" alt="Saurabh Sharma" title="Saurabh Sharma">
+      </a>
+      <h1><a href="http://saurabhsharma.io">Saurabh Sharma</a></h1>
+
+<p>Software Developer</p>
+      <nav>
+        <ul class="list">
+          <li><a href="http://saurabhsharma.io/pages/about-me/#about-me">About Me</a></li>
+          <li><a href="http://saurabhsharma.io/pages/contact/#contact">Contact</a></li>
+
+        </ul>
+      </nav>
+
+      <ul class="social">
+        <li><a class="sc-github" href="https://github.com/d3prof3t" target="_blank"><i class="fa fa-github"></i></a></li>
+        <li><a class="sc-twitter-square" href="https://twitter.com/saurabhpysharma" target="_blank"><i class="fa fa-twitter-square"></i></a></li>
+        <li><a class="sc-linkedin" href="https://linkedin.com/in/saurabhpysharma" target="_blank"><i class="fa fa-linkedin"></i></a></li>
+      </ul>
+    </div>
+
+
+  </aside>
+  <main>
+
+    <nav>
+      <a href="http://saurabhsharma.io">    Home
+</a>
+
+      <a href="/archives.html">Archives</a>
+      <a href="/categories.html">Categories</a>
+      <a href="/tags.html">Tags</a>
+
+      <a href="http://saurabhsharma.io/feeds/all.atom.xml">    Atom
+</a>
+
+    </nav>
+
+<article class="single">
+  <header>
+    <h1 id="iterable-streams-using-python-generators">Using Iterable Streams for Efficient Data Processing using Python Generators</h1>
+    <p>
+          Posted on 2017-05-27 in <a href="http://saurabhsharma.io/category/python-data-processing.html">Python, Data Processing</a>
+
+
+    </p>
+  </header>
+
+
+  <div>
+    <p>We often iterate and operate over large datasets using common data structures such as lists or list of dictionaries loaded in the memory. This approach turns out to be non-feasible never mind being scalable, when the data at hand gets to GBs/TBs or a continuous stream of items, making the memory need completely uncertain. In such situations the available memory gets too low as compared to the size of the dataset, hence causing the available memory to choke.</p>
+<p>Rather than keeping such large amount of data in the memory, wouldn't it be great if we could <a href="https://en.wikipedia.org/wiki/Lazy_evaluation">lazily</a> evaluate it, ie: process one item at a time in memory, and only ask for the next item when needed enabling us to rule out the dependency on size of the data.</p>
+<p>By the end of this post...</p>
+<ol>
+<li>
+<p>You will be in a state to appreciate the lazy evaluation approach towards the data.</p>
+</li>
+<li>
+<p>Understand and implement generator functions to produce/consume data as iterable streams.</p>
+</li>
+<li>
+<p>Build a custom processing pipeline using multiple generator functions.</p>
+</li>
+</ol>
+<p>Let's try to understand what does lazy evaluation mean.</p>
+<hr>
+
+<h2 id="lazy-evaluation-of-expressions">Lazy Evaluation of Expressions</h2>
+<p>When lazily evaluating expressions, assigning an expression to a variable does not get evaluated in place rather it is postponed until it's value is needed or consumed. Consider the range function in Python 2.x and 3.x</p>
+<p><strong>Python 2.x</strong></p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">r</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">r</span>
+<span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<p>In the above snippet, we can clearly see that range function on assignment to a variable creates a new list object in memory and binds it to that variable.</p>
+<p><br>
+<strong>Python 3.x</strong></p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">r</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">r</span>
+<span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+<span class="o">...</span>     <span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+<span class="o">...</span>
+
+<span class="mi">0</span> <span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="mi">4</span> <span class="mi">5</span> <span class="mi">6</span> <span class="mi">7</span> <span class="mi">8</span> <span class="mi">9</span>
+<span class="o">&gt;&gt;&gt;</span><span class="n">s</span>
+</pre></div>
+
+
+<p>In the above snippet, we can clearly see that the range function returns an object which when iterated over produces values one after the other. Such an evaluation is termed as Lazy evaluation in contrast to the Eager evaluation in the previous snippet.</p>
+<p><strong>Note</strong>: Object returned by the range function is called as an <a href="https://docs.python.org/3/library/stdtypes.html#iterator-types">iterator</a> object.</p>
+<p><br/>
+Generator functions also return an iterator object more formally called as a generator object, and are a really good implementation of lazy evaluation approach.</p>
+<hr>
+
+<h2 id="generator-functions">Generator Functions</h2>
+<p>Unlike normal functions which return a single value, generator functions produce a sequence of values one after the other using the <code>yield</code> statement. The yield statement on execution suspends the function, remembering it's execution state in order to resume from the same point on next iteration.</p>
+<p>Let's consider couple of snippets to contrast between a non-generator solution and a generator solution for producing the non -ve even integers within a specified range.</p>
+<h3 id="snippet-i-a-non-generator-way-to-find-all-non-ve-even-integers-within-10">Snippet I - A Non-Generator way to find all non -ve even integers within 10</h3>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">sys</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="mi">64</span>    <span class="c1"># in bytes</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+<span class="o">...</span>     <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<span class="o">...</span>          <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">128</span>   <span class="c1"># in bytes</span>
+</pre></div>
+
+
+<p>In the above snippet, we get a list object of all the non -ve integers till 10 which obviously consumes some memeory. When limit increases to around to 10k or 100k of non -ve integers, then the memory consumption levels will certainly be of atmost concern.</p>
+<p>Generator functions are the perfect tool of choice to combat such situations. But why is that so?</p>
+<p><br/></p>
+<h3 id="snippet-ii-a-generator-way-to-find-all-non-ve-even-integers-within-10">Snippet II - A Generator way to find all non -ve even integers within 10</h3>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">sys</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">gen_evens</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+<span class="o">...</span>     <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Starting to generate evens ...&#39;</span><span class="p">)</span>
+<span class="o">...</span>     <span class="k">while</span> <span class="n">num</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+<span class="o">...</span>             <span class="k">if</span> <span class="n">num</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<span class="o">...</span>                     <span class="k">yield</span> <span class="n">num</span>
+<span class="o">...</span>             <span class="n">num</span> <span class="o">-=</span> <span class="mi">1</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">evens</span> <span class="o">=</span> <span class="n">gen_evens</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">evens</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">88</span>    <span class="c1"># in bytes</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">evens</span>
+<span class="o">&lt;</span><span class="n">generator</span> <span class="nb">object</span> <span class="n">gen_evens</span> <span class="n">at</span> <span class="mh">0x7f5debbd1200</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<p>In the above snippet, the generator function didn't start executing when called as we don't see the print statement, instead a generator object is returned which can only be iterated over to get the next values. There are simply no other operations that can be performed on the generator object. It's just good for one and only one thing, which is iteration.</p>
+<p>Usually generator objects can be hooked up with a for loop (or any looping construct) to produce values like:</p>
+<p><br/></p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">evens</span>
+<span class="o">&lt;</span><span class="n">generator</span> <span class="nb">object</span> <span class="n">gen_evens</span> <span class="n">at</span> <span class="mh">0x7f5b8e6407d8</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">even</span> <span class="ow">in</span> <span class="n">evens</span><span class="p">:</span>
+<span class="o">...</span>     <span class="k">print</span><span class="p">(</span><span class="n">even</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="n">Starting</span> <span class="n">to</span> <span class="n">produce</span> <span class="n">evens</span><span class="o">...</span>
+<span class="mi">10</span>
+<span class="mi">8</span>
+<span class="mi">6</span>
+<span class="mi">4</span>
+<span class="mi">2</span>
+<span class="mi">0</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">even</span> <span class="ow">in</span> <span class="n">evens</span><span class="p">:</span>
+<span class="o">...</span>     <span class="k">print</span><span class="p">(</span><span class="n">even</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<p>In the above snippet, we simply iterated over the <code>evens</code> generator object and got all the values one after the other.</p>
+<p><br/></p>
+<p><strong>But why didn't it do the same on second attempt?</strong></p>
+<blockquote>
+<p>Unlike lists once the generator object is consumed it can't produce values again. TO generate the values again, we need to call the generator function once again. This clearly depicts that these generated values are not in memory at all, therefore allowing us to treat the data as a stream of items and process them one after the other.</p>
+</blockquote>
+<h3 id="under-the-hood">Under the Hood</h3>
+<p>The generator functions starts to execute on call to <code>next()</code>. Any looping construct, calls <code>__next__()</code> or <code>next()</code> method on the iterator object implicitly to get the next value.</p>
+<p><br/></p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">evens</span><span class="p">)</span>
+<span class="n">Starting</span> <span class="n">to</span> <span class="n">generate</span> <span class="n">evens</span> <span class="o">...</span>
+<span class="mi">10</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">evens</span><span class="p">)</span>
+<span class="mi">8</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">evens</span><span class="p">)</span>
+<span class="mi">6</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">evens</span><span class="p">)</span>
+<span class="mi">4</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">evens</span><span class="p">)</span>
+<span class="mi">2</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">evens</span><span class="p">)</span>
+<span class="mi">0</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">evens</span><span class="p">)</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="ne">StopIteration</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">evens</span><span class="p">)</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="ne">StopIteration</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+
+
+<p>Everytime <code>next</code> is called, the code continues to execute until it hits the yield statement again. When no more values are left to produce,  a <code>StopIteration</code> exception is raised indicating the end of the stream. For loop gracefully exits the iteration process on catching such an exception.</p>
+<p><br/></p>
+<blockquote>
+<p>When size of the data is larger than the available memory, then generator functions outperform in terms of speed and memory consumptions as compared to working with temporary lists within our code and iterating over them.</p>
+</blockquote>
+<hr>
+
+<h2 id="building-a-processing-pipeline-using-generator-functions">Building a processing pipeline using Generator functions</h2>
+<p>Until now we used generator functions to produce a stream of items, which is generally consumed by a for loop. In this section, we will glue together multiple generator functions and build our very own custom processing pipeline where each generator function acts an individual component in pipeline.</p>
+<p>Let's consider the following use case:</p>
+<h3 id="use-case">Use Case</h3>
+<p>We need to filter out our access logs to determine all incoming GET requests which are responded with a 404 HTTP status code in a realtime fashion in order to determine whether or not our application server is getting spammed by unwanting requests.</p>
+<h3 id="our-approach">Our Approach</h3>
+<ol>
+<li>
+<p>Read the incoming access logs of our nginx file indefinitely forever. (similar to <code>tail -f</code> command)</p>
+<ul>
+<li>Component name: <code>read_access_logs</code></li>
+</ul>
+</li>
+<li>
+<p>Now, filter out all the 404 responses.</p>
+<ul>
+<li>Component name: <code>filter_404</code></li>
+</ul>
+</li>
+<li>
+<p>Then, filter out all the GET requests.</p>
+<ul>
+<li>Component name: <code>filter_get_requests</code></li>
+</ul>
+</li>
+<li>
+<p>Finally, print out the requested route and IP address of that particular equest.</p>
+<ul>
+<li>Component Info: <code>get_request_info</code></li>
+</ul>
+</li>
+</ol>
+<p>Now we will create a different component for each step above in our processing pipeline.</p>
+<div class="highlight"><pre><span></span><span class="c1"># parse.py</span>
+
+<span class="k">def</span> <span class="nf">read_access_logs</span><span class="p">():</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;/var/log/nginx/access.log&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># seek to the end of file and start listening for next incoming request</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">line</span>
+
+<span class="k">def</span> <span class="nf">filter_404</span><span class="p">(</span><span class="n">logs</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">log</span> <span class="ow">in</span> <span class="n">logs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;404&#39;</span> <span class="ow">in</span> <span class="n">log</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">log</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+<span class="k">def</span> <span class="nf">filter_get_requests</span><span class="p">(</span><span class="n">logs_404</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">log_404</span> <span class="ow">in</span> <span class="n">logs_404</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;GET&#39;</span> <span class="ow">in</span> <span class="n">log_404</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">log_404</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+<span class="k">def</span> <span class="nf">get_request_info</span><span class="p">(</span><span class="n">get_404_requests</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">get_404_requests</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="s2">&quot;Remote Address :: {} :: Requested Route :: {} :: HTTP User Agent :: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+
+<span class="c1"># glue up all the components and create a processing pipeline</span>
+<span class="n">logs</span> <span class="o">=</span> <span class="n">read_access_logs</span><span class="p">()</span>
+<span class="n">logs_404</span> <span class="o">=</span> <span class="n">filter_404</span><span class="p">(</span><span class="n">logs</span><span class="p">)</span>
+<span class="n">get_404_logs</span> <span class="o">=</span> <span class="n">filter_get_requests</span><span class="p">(</span><span class="n">logs_404</span><span class="p">)</span>
+<span class="n">request_info_logs</span> <span class="o">=</span> <span class="n">get_request_info</span><span class="p">(</span><span class="n">get_404_logs</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">request_info_log</span> <span class="ow">in</span> <span class="n">request_info_logs</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">request_info_log</span><span class="p">)</span>
+</pre></div>
+
+
+<p>In the above snippet, we stacked together different components and formed our processing pipeline. Each component in the pipeline is driven by the for loop on the generator object and consuming the whole stream lazily by pushing down each item into the next component for further processing.</p>
+<p>Such an approach allows for a better way to iterate over huge amount of data by decoupling the iteration process from the operation to be performed on the data at each stage.</p>
+<h3 id="sample-output">Sample Output</h3>
+<div class="highlight"><pre><span></span><span class="nt">Remote</span> <span class="nt">Address</span> <span class="o">::</span> <span class="nt">124</span><span class="p">.</span><span class="nc">88</span><span class="p">.</span><span class="nc">64</span><span class="p">.</span><span class="nc">206</span>  <span class="o">::</span> <span class="nt">Requested</span> <span class="nt">Route</span> <span class="o">::</span>  <span class="cp">[</span><span class="mi">25</span><span class="p">/</span><span class="nx">May</span><span class="p">/</span><span class="nx">2017</span><span class="p">:</span><span class="mi">04</span><span class="p">:</span><span class="mi">56</span><span class="p">:</span><span class="mi">25</span> <span class="o">+</span><span class="mi">0000</span><span class="cp">]</span> <span class="s2">&quot;GET / HTTP/1.0&quot;</span> <span class="nt">404</span> <span class="nt">233</span> <span class="s2">&quot; :: HTTP User Agent :: &quot;</span> <span class="s2">&quot;</span>
+<span class="s2">Remote Address :: 139.162.114.70  :: Requested Route ::  </span><span class="cp">[</span><span class="mi">25</span><span class="p">/</span><span class="nx">May</span><span class="p">/</span><span class="nx">2017</span><span class="p">:</span><span class="mi">06</span><span class="p">:</span><span class="mi">01</span><span class="p">:</span><span class="mi">21</span> <span class="o">+</span><span class="mi">0000</span><span class="cp">]</span><span class="s2"> &quot;</span><span class="nt">GET</span> <span class="o">/</span> <span class="nt">HTTP</span><span class="o">/</span><span class="nt">1</span><span class="p">.</span><span class="nc">1</span><span class="s2">&quot; 404 233 &quot;</span> <span class="o">::</span> <span class="nt">HTTP</span> <span class="nt">User</span> <span class="nt">Agent</span> <span class="o">::</span> <span class="s2">&quot; &quot;</span><span class="nt">Mozilla</span><span class="o">/</span><span class="nt">5</span><span class="p">.</span><span class="nc">0</span> <span class="o">(</span><span class="nt">Windows</span> <span class="nt">NT</span> <span class="nt">10</span><span class="p">.</span><span class="nc">0</span><span class="o">;</span> <span class="nt">WOW64</span><span class="o">)</span> <span class="nt">AppleWebKit</span><span class="o">/</span><span class="nt">537</span><span class="p">.</span><span class="nc">36</span> <span class="o">(</span><span class="nt">KHTML</span><span class="o">,</span> <span class="nt">like</span> <span class="nt">Gecko</span><span class="o">)</span> <span class="nt">Chrome</span><span class="o">/</span><span class="nt">50</span><span class="p">.</span><span class="nc">0</span><span class="p">.</span><span class="nc">2661</span><span class="p">.</span><span class="nc">102</span> <span class="nt">Safari</span><span class="o">/</span><span class="nt">537</span><span class="p">.</span><span class="nc">36</span><span class="s2">&quot; &quot;</span>
+<span class="nt">Remote</span> <span class="nt">Address</span> <span class="o">::</span> <span class="nt">60</span><span class="p">.</span><span class="nc">191</span><span class="p">.</span><span class="nc">38</span><span class="p">.</span><span class="nc">77</span>  <span class="o">::</span> <span class="nt">Requested</span> <span class="nt">Route</span> <span class="o">::</span>  <span class="cp">[</span><span class="mi">25</span><span class="p">/</span><span class="nx">May</span><span class="p">/</span><span class="nx">2017</span><span class="p">:</span><span class="mi">22</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">24</span> <span class="o">+</span><span class="mi">0000</span><span class="cp">]</span> <span class="s2">&quot;GET /current_config/Account1 HTTP/1.1&quot;</span> <span class="nt">404</span> <span class="nt">233</span> <span class="s2">&quot; :: HTTP User Agent :: &quot;</span> <span class="s2">&quot;Mozilla/5.0&quot;</span> <span class="s2">&quot;</span>
+<span class="s2">Remote Address :: 59.56.110.208  :: Requested Route ::  </span><span class="cp">[</span><span class="mi">26</span><span class="p">/</span><span class="nx">May</span><span class="p">/</span><span class="nx">2017</span><span class="p">:</span><span class="mi">01</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mi">54</span> <span class="o">+</span><span class="mi">0000</span><span class="cp">]</span><span class="s2"> &quot;</span><span class="nt">GET</span> <span class="o">/</span><span class="nt">phpMyAdmin</span> <span class="nt">HTTP</span><span class="o">/</span><span class="nt">1</span><span class="p">.</span><span class="nc">1</span><span class="s2">&quot; 404 233 &quot;</span><span class="nt">http</span><span class="o">://</span><span class="nt">139</span><span class="p">.</span><span class="nc">59</span><span class="p">.</span><span class="nc">13</span><span class="p">.</span><span class="nc">232</span><span class="o">/</span><span class="nt">phpMyAdmin</span><span class="s2">&quot; &quot;</span><span class="nt">Mozilla</span><span class="o">/</span><span class="nt">4</span><span class="p">.</span><span class="nc">0</span> <span class="o">(</span><span class="nt">compatible</span><span class="o">;</span> <span class="nt">MSIE</span> <span class="nt">9</span><span class="p">.</span><span class="nc">0</span><span class="o">;</span> <span class="nt">Windows</span> <span class="nt">NT</span> <span class="nt">6</span><span class="p">.</span><span class="nc">1</span><span class="o">)</span><span class="s2">&quot; &quot;</span> <span class="o">::</span> <span class="nt">HTTP</span> <span class="nt">User</span> <span class="nt">Agent</span> <span class="o">::</span> <span class="s2">&quot;</span>
+
+<span class="s2">Remote Address :: 59.56.110.208  :: Requested Route ::  </span><span class="cp">[</span><span class="mi">26</span><span class="p">/</span><span class="nx">May</span><span class="p">/</span><span class="nx">2017</span><span class="p">:</span><span class="mi">01</span><span class="p">:</span><span class="mi">05</span><span class="p">:</span><span class="mi">47</span> <span class="o">+</span><span class="mi">0000</span><span class="cp">]</span><span class="s2"> &quot;</span><span class="nt">GET</span> <span class="o">/</span><span class="nt">phpMyAdmin</span> <span class="nt">HTTP</span><span class="o">/</span><span class="nt">1</span><span class="p">.</span><span class="nc">1</span><span class="s2">&quot; 404 233 &quot;</span><span class="nt">http</span><span class="o">://</span><span class="nt">139</span><span class="p">.</span><span class="nc">59</span><span class="p">.</span><span class="nc">13</span><span class="p">.</span><span class="nc">232</span><span class="o">/</span><span class="nt">phpMyAdmin</span><span class="s2">&quot; &quot;</span><span class="nt">Mozilla</span><span class="o">/</span><span class="nt">4</span><span class="p">.</span><span class="nc">0</span> <span class="o">(</span><span class="nt">compatible</span><span class="o">;</span> <span class="nt">MSIE</span> <span class="nt">9</span><span class="p">.</span><span class="nc">0</span><span class="o">;</span> <span class="nt">Windows</span> <span class="nt">NT</span> <span class="nt">6</span><span class="p">.</span><span class="nc">1</span><span class="o">)</span><span class="s2">&quot; &quot;</span> <span class="o">::</span> <span class="nt">HTTP</span> <span class="nt">User</span> <span class="nt">Agent</span> <span class="o">::</span> <span class="s2">&quot;</span>
+
+<span class="s2">Remote Address :: 139.162.124.167  :: Requested Route ::  </span><span class="cp">[</span><span class="mi">26</span><span class="p">/</span><span class="nx">May</span><span class="p">/</span><span class="nx">2017</span><span class="p">:</span><span class="mi">07</span><span class="p">:</span><span class="mi">41</span><span class="p">:</span><span class="mi">21</span> <span class="o">+</span><span class="mi">0000</span><span class="cp">]</span><span class="s2"> &quot;</span><span class="nt">GET</span> <span class="o">/</span> <span class="nt">HTTP</span><span class="o">/</span><span class="nt">1</span><span class="p">.</span><span class="nc">1</span><span class="s2">&quot; 404 233 &quot;</span> <span class="o">::</span> <span class="nt">HTTP</span> <span class="nt">User</span> <span class="nt">Agent</span> <span class="o">::</span> <span class="s2">&quot; &quot;</span><span class="nt">Mozilla</span><span class="o">/</span><span class="nt">5</span><span class="p">.</span><span class="nc">0</span><span class="s2">&quot; &quot;</span>
+<span class="nt">Remote</span> <span class="nt">Address</span> <span class="o">::</span> <span class="nt">218</span><span class="p">.</span><span class="nc">93</span><span class="p">.</span><span class="nc">201</span><span class="p">.</span><span class="nc">199</span>  <span class="o">::</span> <span class="nt">Requested</span> <span class="nt">Route</span> <span class="o">::</span>  <span class="cp">[</span><span class="mi">26</span><span class="p">/</span><span class="nx">May</span><span class="p">/</span><span class="nx">2017</span><span class="p">:</span><span class="mi">11</span><span class="p">:</span><span class="mi">17</span><span class="p">:</span><span class="mi">46</span> <span class="o">+</span><span class="mi">0000</span><span class="cp">]</span> <span class="s2">&quot;GET /manager/html HTTP/1.1&quot;</span> <span class="nt">404</span> <span class="nt">233</span> <span class="s2">&quot; :: HTTP User Agent :: &quot;</span> <span class="s2">&quot;Mozilla/3.0 (compatible; Indy Library)&quot;</span> <span class="s2">&quot;</span>
+<span class="s2">Remote Address :: 183.129.160.229  :: Requested Route ::  </span><span class="cp">[</span><span class="mi">26</span><span class="p">/</span><span class="nx">May</span><span class="p">/</span><span class="nx">2017</span><span class="p">:</span><span class="mi">12</span><span class="p">:</span><span class="mi">48</span><span class="p">:</span><span class="mi">31</span> <span class="o">+</span><span class="mi">0000</span><span class="cp">]</span><span class="s2"> &quot;</span><span class="nt">GET</span> <span class="o">/</span> <span class="nt">HTTP</span><span class="o">/</span><span class="nt">1</span><span class="p">.</span><span class="nc">1</span><span class="s2">&quot; 404 233 &quot;</span> <span class="o">::</span> <span class="nt">HTTP</span> <span class="nt">User</span> <span class="nt">Agent</span> <span class="o">::</span> <span class="s2">&quot; &quot;</span><span class="nt">Mozilla</span><span class="o">/</span><span class="nt">5</span><span class="p">.</span><span class="nc">0</span> <span class="o">(</span><span class="nt">Macintosh</span><span class="o">;</span> <span class="nt">Intel</span> <span class="nt">Mac</span> <span class="nt">OS</span> <span class="nt">X</span> <span class="nt">10</span><span class="p">.</span><span class="nc">11</span><span class="o">;</span> <span class="nt">rv</span><span class="p">:</span><span class="nd">47</span><span class="p">.</span><span class="nc">0</span><span class="o">)</span> <span class="nt">Gecko</span><span class="o">/</span><span class="nt">20100101</span> <span class="nt">Firefox</span><span class="o">/</span><span class="nt">47</span><span class="p">.</span><span class="nc">0</span><span class="s2">&quot; &quot;</span>
+<span class="nt">Remote</span> <span class="nt">Address</span> <span class="o">::</span> <span class="nt">183</span><span class="p">.</span><span class="nc">129</span><span class="p">.</span><span class="nc">160</span><span class="p">.</span><span class="nc">229</span>  <span class="o">::</span> <span class="nt">Requested</span> <span class="nt">Route</span> <span class="o">::</span>  <span class="cp">[</span><span class="mi">26</span><span class="p">/</span><span class="nx">May</span><span class="p">/</span><span class="nx">2017</span><span class="p">:</span><span class="mi">21</span><span class="p">:</span><span class="mi">51</span><span class="p">:</span><span class="mi">38</span> <span class="o">+</span><span class="mi">0000</span><span class="cp">]</span> <span class="s2">&quot;GET / HTTP/1.1&quot;</span> <span class="nt">404</span> <span class="nt">233</span> <span class="s2">&quot; :: HTTP User Agent :: &quot;</span> <span class="s2">&quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:47.0) Gecko/20100101 Firefox/47.0&quot;</span> <span class="s2">&quot;</span>
+<span class="s2">Remote Address :: 49.73.191.7  :: Requested Route ::  </span><span class="cp">[</span><span class="mi">27</span><span class="p">/</span><span class="nx">May</span><span class="p">/</span><span class="nx">2017</span><span class="p">:</span><span class="mi">09</span><span class="p">:</span><span class="mi">05</span><span class="p">:</span><span class="mi">39</span> <span class="o">+</span><span class="mi">0000</span><span class="cp">]</span><span class="s2"> &quot;</span><span class="nt">GET</span> <span class="o">/</span> <span class="nt">HTTP</span><span class="o">/</span><span class="nt">1</span><span class="p">.</span><span class="nc">1</span><span class="s2">&quot; 404 233 &quot;</span> <span class="o">::</span> <span class="nt">HTTP</span> <span class="nt">User</span> <span class="nt">Agent</span> <span class="o">::</span> <span class="s2">&quot; &quot;</span>
+</pre></div>
+
+
+<p><strong>Note</strong>: The program keeps on running indefinitely until we exit from it, and listens for the next incoming request so that it can push it through our pipeline and filter out desired results. For the purpose of this post, all of the filtered data is printed out to STDOUT.</p>
+<p>Checkout out the <a href="https://asciinema.org/a/122485">video</a> demonstrating the above use case.</p>
+<hr>
+
+<h2 id="conclusion">Conclusion</h2>
+<p>Iteration is a very basic yet one of the most powerful programming tools. Approaching huge datasets lazily, makes it a lot easier to efficiently process the data by caring about just the next incoming item. Nowadays, many of the data processing tools/products such as Storm, Spark, <a href="https://github.com/spotify/luigi">Luigi</a>(built on core Python) and many others are aligned with the same approach of streaming the data in a pipeline with a lot more robustness ofcourse.</p>
+<p>I hope this post encourages you to breakdown your laborious processes into abstract components and form a pipeline out of it, hence making it more scalable in terms of easier debugging and adding/removing new components within the pipeline.</p>
+<p>Would love to hear suggestions and feedback.</p>
+<p>Cheers!</p>
+  </div>
+  <div class="tag-cloud">
+    <p>
+      <a href="http://saurabhsharma.io/tag/iterable-streams.html">iterable-streams</a>
+      <a href="http://saurabhsharma.io/tag/iterators-generators.html">iterators-generators</a>
+      <a href="http://saurabhsharma.io/tag/efficient-data-processing.html">efficient-data-processing</a>
+    </p>
+  </div>
+
+  <div class="center social-share">
+    <p>    Like this article? Share it with your friends!
+</p>
+    <div class="addthis_native_toolbox"></div>
+    <div class="addthis_sharing_toolbox"></div>
+  </div>
+
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'saurabhsharma-io';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>
+        Please enable JavaScript to view comments.
+
+</noscript>
+</article>
+
+    <footer>
+<p>
+  &copy; Saurabh Sharma 2017 - This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>
+</p>
+<p>    Powered by <a href="http://getpelican.com" target="_blank">Pelican</a> - <a href="https://github.com/alexandrevicenzi/flex" target="_blank">Flex</a> theme by <a href="http://alexandrevicenzi.com" target="_blank">Alexandre Vicenzi</a>
+</p><p>
+  <a rel="license"
+     href="http://creativecommons.org/licenses/by-sa/4.0/"
+     target="_blank">
+    <img alt="Creative Commons License"
+         title="Creative Commons License"
+         style="border-width:0"
+         src="https://i.creativecommons.org/l/by-sa/4.0/80x15.png"
+         width="80"
+         height="15"/>
+  </a>
+</p>    </footer>
+  </main>
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-96532127-1', 'auto');
+  ga('send', 'pageview');
+</script>
+<!-- End Google Analytics -->
+
+    <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-58d7bd0f1d7e3461" async="async"></script>
+
+
+<script type="application/ld+json">
+{
+  "@context" : "http://schema.org",
+  "@type" : "Blog",
+  "name": " Saurabh Sharma's Blog ",
+  "url" : "http://saurabhsharma.io",
+  "image": "https://s3.ap-south-1.amazonaws.com/saurabhsharma.io/images/me.jpg",
+  "description": "My thoughts and writings on things I care about."
+}
+</script>
+</body>
+</html>
