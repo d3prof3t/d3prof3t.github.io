@@ -40,20 +40,20 @@
 &lt;span class="o"&gt;...&lt;/span&gt;
 
 &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt; &lt;span class="mi"&gt;4&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt; &lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="mi"&gt;7&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt;
-&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;In the above snippet, we can clearly see that the range function returns an object which when iterated over produces values one after the other. Such an evaluation is termed as Lazy evaluation in contrast to the Eager evaluation in the previous snippet.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: Object returned by the range function is called as an &lt;a href="https://docs.python.org/3/library/stdtypes.html#iterator-types"&gt;iterator&lt;/a&gt; object.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: Object returned by the range function is called as an &lt;a href="https://docs.python.org/3/library/stdtypes.html#iterator-types"&gt;iterator&lt;/a&gt; object. Python has a lot more builtins which get lazy evaluated post returning the iterator object such as, &lt;a href="https://docs.python.org/3/library/functions.html#map"&gt;Map&lt;/a&gt;, &lt;a href="https://docs.python.org/3/library/functools.html#functools.reduce"&gt;Reduce&lt;/a&gt;, &lt;a href="https://docs.python.org/3/library/functions.html#filter"&gt;Filter&lt;/a&gt; and &lt;a href="https://docs.python.org/3.6/reference/expressions.html#lambda"&gt;Lambda&lt;/a&gt; are the most used ones.&lt;/p&gt;
 &lt;p&gt;&lt;br/&gt;
 Generator functions also return an iterator object more formally called as a generator object, and are a really good implementation of lazy evaluation approach.&lt;/p&gt;
 &lt;hr&gt;
 
 &lt;h2 id="generator-functions"&gt;Generator Functions&lt;/h2&gt;
 &lt;p&gt;Unlike normal functions which return a single value, generator functions produce a sequence of values one after the other using the &lt;code&gt;yield&lt;/code&gt; statement. The yield statement on execution suspends the function, remembering it's execution state in order to resume from the same point on next iteration.&lt;/p&gt;
-&lt;p&gt;Let's consider couple of snippets to contrast between a non-generator solution and a generator solution for producing the non -ve even integers within a specified range.&lt;/p&gt;
-&lt;h3 id="snippet-i-a-non-generator-way-to-find-all-non-ve-even-integers-within-10"&gt;Snippet I - A Non-Generator way to find all non -ve even integers within 10&lt;/h3&gt;
+&lt;p&gt;Let's consider couple of snippets to contrast between a non-generator solution and a generator solution for producing the non-negative even integers within a specified range.&lt;/p&gt;
+&lt;h3 id="snippet-i-a-non-generator-way-to-find-all-non-negative-even-integers-within-10"&gt;Snippet I - A Non-Generator way to find all non-negative even integers within 10&lt;/h3&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;result&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
@@ -72,10 +72,10 @@ Generator functions also return an iterator object more formally called as a gen
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;In the above snippet, we get a list object of all the non -ve integers till 10 which obviously consumes some memeory. When limit increases to around to 10k or 100k of non -ve integers, then the memory consumption levels will certainly be of atmost concern.&lt;/p&gt;
+&lt;p&gt;In the above snippet, we get a list object of all the non-negative integers till 10 which obviously consumes some memeory. When limit increases to around to 10k or 100k of non-negative even integers, then the memory consumption levels will certainly be of atmost concern.&lt;/p&gt;
 &lt;p&gt;Generator functions are the perfect tool of choice to combat such situations. But why is that so?&lt;/p&gt;
 &lt;p&gt;&lt;br/&gt;&lt;/p&gt;
-&lt;h3 id="snippet-ii-a-generator-way-to-find-all-non-ve-even-integers-within-10"&gt;Snippet II - A Generator way to find all non -ve even integers within 10&lt;/h3&gt;
+&lt;h3 id="snippet-ii-a-generator-way-to-find-all-non-negative-even-integers-within-10"&gt;Snippet II - A Generator way to find all non-negative even integers within 10&lt;/h3&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;gen_evens&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;num&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
@@ -156,6 +156,7 @@ Generator functions also return an iterator object more formally called as a gen
 &lt;/pre&gt;&lt;/div&gt;
 
 
+&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: If you are wondering as to why there are two different ways of using &lt;code&gt;next&lt;/code&gt;, read &lt;a href="https://www.python.org/dev/peps/pep-3114/"&gt;PEP3114&lt;/a&gt; for a better understanding.&lt;/p&gt;
 &lt;p&gt;Everytime &lt;code&gt;next&lt;/code&gt; is called, the code continues to execute until it hits the yield statement again. When no more values are left to produce,  a &lt;code&gt;StopIteration&lt;/code&gt; exception is raised indicating the end of the stream. For loop gracefully exits the iteration process on catching such an exception.&lt;/p&gt;
 &lt;p&gt;&lt;br/&gt;&lt;/p&gt;
 &lt;blockquote&gt;
@@ -189,7 +190,7 @@ Generator functions also return an iterator object more formally called as a gen
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;Finally, print out the requested route and IP address of that particular equest.&lt;/p&gt;
+&lt;p&gt;Finally, print out the requested route and IP address of that particular request.&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Component Info: &lt;code&gt;get_request_info&lt;/code&gt;&lt;/li&gt;
 &lt;/ul&gt;

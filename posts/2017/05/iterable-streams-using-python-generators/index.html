@@ -143,20 +143,20 @@
 <span class="o">...</span>
 
 <span class="mi">0</span> <span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="mi">4</span> <span class="mi">5</span> <span class="mi">6</span> <span class="mi">7</span> <span class="mi">8</span> <span class="mi">9</span>
-<span class="o">&gt;&gt;&gt;</span><span class="n">s</span>
+<span class="o">&gt;&gt;&gt;</span>
 </pre></div>
 
 
 <p>In the above snippet, we can clearly see that the range function returns an object which when iterated over produces values one after the other. Such an evaluation is termed as Lazy evaluation in contrast to the Eager evaluation in the previous snippet.</p>
-<p><strong>Note</strong>: Object returned by the range function is called as an <a href="https://docs.python.org/3/library/stdtypes.html#iterator-types">iterator</a> object.</p>
+<p><strong>Note</strong>: Object returned by the range function is called as an <a href="https://docs.python.org/3/library/stdtypes.html#iterator-types">iterator</a> object. Python has a lot more builtins which get lazy evaluated post returning the iterator object such as, <a href="https://docs.python.org/3/library/functions.html#map">Map</a>, <a href="https://docs.python.org/3/library/functools.html#functools.reduce">Reduce</a>, <a href="https://docs.python.org/3/library/functions.html#filter">Filter</a> and <a href="https://docs.python.org/3.6/reference/expressions.html#lambda">Lambda</a> are the most used ones.</p>
 <p><br/>
 Generator functions also return an iterator object more formally called as a generator object, and are a really good implementation of lazy evaluation approach.</p>
 <hr>
 
 <h2 id="generator-functions">Generator Functions</h2>
 <p>Unlike normal functions which return a single value, generator functions produce a sequence of values one after the other using the <code>yield</code> statement. The yield statement on execution suspends the function, remembering it's execution state in order to resume from the same point on next iteration.</p>
-<p>Let's consider couple of snippets to contrast between a non-generator solution and a generator solution for producing the non -ve even integers within a specified range.</p>
-<h3 id="snippet-i-a-non-generator-way-to-find-all-non-ve-even-integers-within-10">Snippet I - A Non-Generator way to find all non -ve even integers within 10</h3>
+<p>Let's consider couple of snippets to contrast between a non-generator solution and a generator solution for producing the non-negative even integers within a specified range.</p>
+<h3 id="snippet-i-a-non-generator-way-to-find-all-non-negative-even-integers-within-10">Snippet I - A Non-Generator way to find all non-negative even integers within 10</h3>
 <div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">sys</span>
 <span class="o">&gt;&gt;&gt;</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
@@ -175,10 +175,10 @@ Generator functions also return an iterator object more formally called as a gen
 </pre></div>
 
 
-<p>In the above snippet, we get a list object of all the non -ve integers till 10 which obviously consumes some memeory. When limit increases to around to 10k or 100k of non -ve integers, then the memory consumption levels will certainly be of atmost concern.</p>
+<p>In the above snippet, we get a list object of all the non-negative integers till 10 which obviously consumes some memeory. When limit increases to around to 10k or 100k of non-negative even integers, then the memory consumption levels will certainly be of atmost concern.</p>
 <p>Generator functions are the perfect tool of choice to combat such situations. But why is that so?</p>
 <p><br/></p>
-<h3 id="snippet-ii-a-generator-way-to-find-all-non-ve-even-integers-within-10">Snippet II - A Generator way to find all non -ve even integers within 10</h3>
+<h3 id="snippet-ii-a-generator-way-to-find-all-non-negative-even-integers-within-10">Snippet II - A Generator way to find all non-negative even integers within 10</h3>
 <div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">sys</span>
 <span class="o">&gt;&gt;&gt;</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">gen_evens</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
@@ -259,6 +259,7 @@ Generator functions also return an iterator object more formally called as a gen
 </pre></div>
 
 
+<p><strong>Note</strong>: If you are wondering as to why there are two different ways of using <code>next</code>, read <a href="https://www.python.org/dev/peps/pep-3114/">PEP3114</a> for a better understanding.</p>
 <p>Everytime <code>next</code> is called, the code continues to execute until it hits the yield statement again. When no more values are left to produce,  a <code>StopIteration</code> exception is raised indicating the end of the stream. For loop gracefully exits the iteration process on catching such an exception.</p>
 <p><br/></p>
 <blockquote>
@@ -292,7 +293,7 @@ Generator functions also return an iterator object more formally called as a gen
 </ul>
 </li>
 <li>
-<p>Finally, print out the requested route and IP address of that particular equest.</p>
+<p>Finally, print out the requested route and IP address of that particular request.</p>
 <ul>
 <li>Component Info: <code>get_request_info</code></li>
 </ul>
