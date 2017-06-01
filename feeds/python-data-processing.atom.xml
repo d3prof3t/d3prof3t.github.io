@@ -156,7 +156,7 @@ Generator functions also return an iterator object more formally called as a gen
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: If you are wondering as to why there are two different ways of using &lt;code&gt;next&lt;/code&gt;, read &lt;a href="https://www.python.org/dev/peps/pep-3114/"&gt;PEP3114&lt;/a&gt; for a better understanding.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: If you are wondering as to why there are two different ways of using &lt;code&gt;next&lt;/code&gt;, read &lt;a href="https://www.python.org/dev/peps/pep-3114/"&gt;PEP 3114&lt;/a&gt; for a better understanding.&lt;/p&gt;
 &lt;p&gt;Everytime &lt;code&gt;next&lt;/code&gt; is called, the code continues to execute until it hits the yield statement again. When no more values are left to produce,  a &lt;code&gt;StopIteration&lt;/code&gt; exception is raised indicating the end of the stream. For loop gracefully exits the iteration process on catching such an exception.&lt;/p&gt;
 &lt;p&gt;&lt;br/&gt;&lt;/p&gt;
 &lt;blockquote&gt;
