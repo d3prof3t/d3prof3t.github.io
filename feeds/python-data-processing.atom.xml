@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Saurabh Sharma's Blog - Python, Data Processing</title><link href="http://saurabhsharma.io/" rel="alternate"></link><link href="http://saurabhsharma.io/feeds/python-data-processing.atom.xml" rel="self"></link><id>http://saurabhsharma.io/</id><updated>2017-05-27T00:00:00+05:30</updated><entry><title>Using Iterable Streams for Efficient Data Processing using Python Generators</title><link href="http://saurabhsharma.io/posts/2017/05/iterable-streams-using-python-generators" rel="alternate"></link><published>2017-05-27T00:00:00+05:30</published><updated>2017-05-27T00:00:00+05:30</updated><author><name>Saurabh Sharma</name></author><id>tag:saurabhsharma.io,2017-05-27:/posts/2017/05/iterable-streams-using-python-generators</id><summary type="html">&lt;p&gt;A brief on how to treat huge datasets as streams for efficient processing&lt;/p&gt;</summary><content type="html">&lt;p&gt;We often iterate and operate over large datasets using common data structures such as lists or list of dictionaries loaded in the memory. This approach turns out to be non-feasible never mind being scalable, when the data at hand gets to GBs/TBs or a continuous stream of items, making the memory need completely uncertain. In such situations the available memory gets too low as compared to the size of the dataset, hence causing the available memory to choke.&lt;/p&gt;
-&lt;p&gt;Rather than keeping such large amount of data in the memory, wouldn't it be great if we could &lt;a href="https://en.wikipedia.org/wiki/Lazy_evaluation"&gt;lazily&lt;/a&gt; evaluate it, ie: process one item at a time in memory, and only ask for the next item when needed enabling us to rule out the dependency on size of the data.&lt;/p&gt;
-&lt;p&gt;By the end of this post...&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Saurabh Sharma's Blog - Python, Data Processing</title><link href="http://saurabhsharma.io/" rel="alternate"></link><link href="http://saurabhsharma.io/feeds/python-data-processing.atom.xml" rel="self"></link><id>http://saurabhsharma.io/</id><updated>2017-05-27T00:00:00+05:30</updated><entry><title>Using Iterable Streams for Efficient Data Processing via Python Generators</title><link href="http://saurabhsharma.io/posts/2017/05/iterable-streams-using-python-generators" rel="alternate"></link><published>2017-05-27T00:00:00+05:30</published><updated>2017-05-27T00:00:00+05:30</updated><author><name>Saurabh Sharma</name></author><id>tag:saurabhsharma.io,2017-05-27:/posts/2017/05/iterable-streams-using-python-generators</id><summary type="html">&lt;p&gt;A brief on how to treat huge datasets as streams for efficient processing&lt;/p&gt;</summary><content type="html">&lt;p&gt;We often iterate and operate over large datasets using common data structures such as lists or lists of dictionaries loaded in memory. This approach turns out to be non-feasible, never mind being scalable, when the data at hand gets to too large or it's a continuous stream of items, making the memory needs completely uncertain. In such situations the available memory gets too low as compared to the size of the dataset, hence causing the available memory to choke.&lt;/p&gt;
+&lt;p&gt;Rather than keeping such large amount of data in the memory, wouldn't it be great if we could &lt;a href="https://en.wikipedia.org/wiki/Lazy_evaluation"&gt;lazily&lt;/a&gt; evaluate it, ie: process one item at a time in memory, and only ask for the next item when needed enabling us to rule out the dependency on size of the data?&lt;/p&gt;
+&lt;p&gt;By the end of this post you will...&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;
-&lt;p&gt;You will be in a state to appreciate the lazy evaluation approach towards the data.&lt;/p&gt;
+&lt;p&gt;Appreciate the lazy evaluation approach towards the data.&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;Understand and implement generator functions to produce/consume data as iterable streams.&lt;/p&gt;
@@ -13,11 +13,11 @@
 &lt;p&gt;Build a custom processing pipeline using multiple generator functions.&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;Let's try to understand what does lazy evaluation mean.&lt;/p&gt;
+&lt;p&gt;Let's try to understand what lazy evaluation means.&lt;/p&gt;
 &lt;hr&gt;
 
 &lt;h2 id="lazy-evaluation-of-expressions"&gt;Lazy Evaluation of Expressions&lt;/h2&gt;
-&lt;p&gt;When lazily evaluating expressions, assigning an expression to a variable does not get evaluated in place rather it is postponed until it's value is needed or consumed. Consider the range function in Python 2.x and 3.x&lt;/p&gt;
+&lt;p&gt;When lazily evaluating expressions, assigning an expression to a variable does not get evaluated in place; it is postponed until its value is needed or consumed. Consider the range function in Python 2.x and 3.x:&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Python 2.x&lt;/strong&gt;&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt;
 &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;r&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;range&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
@@ -27,7 +27,7 @@
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;In the above snippet, we can clearly see that range function on assignment to a variable creates a new list object in memory and binds it to that variable.&lt;/p&gt;
+&lt;p&gt;In the above snippet, we can clearly see that the range function, on assignment to a variable, creates a new list object in memory and binds it to that variable.&lt;/p&gt;
 &lt;p&gt;&lt;br&gt;
 &lt;strong&gt;Python 3.x&lt;/strong&gt;&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt;
@@ -44,14 +44,14 @@
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;In the above snippet, we can clearly see that the range function returns an object which when iterated over produces values one after the other. Such an evaluation is termed as Lazy evaluation in contrast to the Eager evaluation in the previous snippet.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: Object returned by the range function is called as an &lt;a href="https://docs.python.org/3/library/stdtypes.html#iterator-types"&gt;iterator&lt;/a&gt; object. Python has a lot more builtins which get lazy evaluated post returning the iterator object such as: &lt;a href="https://docs.python.org/3/library/functions.html#map"&gt;Map&lt;/a&gt;, &lt;a href="https://docs.python.org/3/library/functools.html#functools.reduce"&gt;Reduce&lt;/a&gt;, &lt;a href="https://docs.python.org/3/library/functions.html#filter"&gt;Filter&lt;/a&gt; and &lt;a href="https://docs.python.org/3.6/reference/expressions.html#lambda"&gt;Lambda&lt;/a&gt; are the most used ones.&lt;/p&gt;
+&lt;p&gt;In the above snippet, we can clearly see that the range function returns an object which, when iterated over, produces values one after the other. Such an evaluation is termed as lazy evaluation in contrast to the Eager evaluation in the previous snippet.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: The object returned by the range function is called as an &lt;a href="https://docs.python.org/3/library/stdtypes.html#iterator-types"&gt;iterator&lt;/a&gt; object. Python has a lot more builtins which get lazy evaluated post returning the iterator object such as  &lt;a href="https://docs.python.org/3/library/functions.html#map"&gt;Map&lt;/a&gt;, &lt;a href="https://docs.python.org/3/library/functools.html#functools.reduce"&gt;Reduce&lt;/a&gt;, &lt;a href="https://docs.python.org/3/library/functions.html#filter"&gt;Filter&lt;/a&gt; and &lt;a href="https://docs.python.org/3.6/reference/expressions.html#lambda"&gt;Lambda&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;&lt;br/&gt;
-Generator functions also return an iterator object more formally called as a generator object, and are a really good implementation of lazy evaluation approach.&lt;/p&gt;
+Generator functions also return an iterator object more formally called as a generator object, and are a really good implementation of the lazy evaluation approach.&lt;/p&gt;
 &lt;hr&gt;
 
 &lt;h2 id="generator-functions"&gt;Generator Functions&lt;/h2&gt;
-&lt;p&gt;Unlike normal functions which return a single value, generator functions produce a sequence of values one after the other using the &lt;code&gt;yield&lt;/code&gt; statement. The yield statement on execution suspends the function, remembering it's execution state in order to resume from the same point on next iteration.&lt;/p&gt;
+&lt;p&gt;Unlike normal functions, which return a single value, generator functions produce a sequence of values one after the other using the &lt;code&gt;yield&lt;/code&gt; statement. The yield statement on execution suspends the function, remembering it's execution state in order to resume from the same point on next iteration.&lt;/p&gt;
 &lt;p&gt;Let's consider couple of snippets to contrast between a non-generator solution and a generator solution for producing the non-negative even integers within a specified range.&lt;/p&gt;
 &lt;h3 id="snippet-i-a-non-generator-way-to-find-all-non-negative-even-integers-within-10"&gt;Snippet I - A Non-Generator way to find all non-negative even integers within 10&lt;/h3&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
@@ -72,7 +72,7 @@ Generator functions also return an iterator object more formally called as a gen
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;In the above snippet, we get a list object of all the non-negative integers till 10 which obviously consumes some memeory. When limit increases to around to 10k or 100k of non-negative even integers, then the memory consumption levels will certainly be of atmost concern.&lt;/p&gt;
+&lt;p&gt;In the above snippet, we get a list object of all the non-negative integers up to 10 which obviously consumes some memory. When the limit increases to around 10k or 100k of non-negative even integers, then the memory consumption levels will certainly of concern.&lt;/p&gt;
 &lt;p&gt;Generator functions are the perfect tool of choice to combat such situations. But why is that so?&lt;/p&gt;
 &lt;p&gt;&lt;br/&gt;&lt;/p&gt;
 &lt;h3 id="snippet-ii-a-generator-way-to-find-all-non-negative-even-integers-within-10"&gt;Snippet II - A Generator way to find all non-negative even integers within 10&lt;/h3&gt;
@@ -96,7 +96,7 @@ Generator functions also return an iterator object more formally called as a gen
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;In the above snippet, the generator function didn't start executing when called as we don't see the print statement, instead a generator object is returned which can only be iterated over to get the next values. There are simply no other operations that can be performed on the generator object. It's just good for one and only one thing, which is iteration.&lt;/p&gt;
+&lt;p&gt;In the above snippet, the generator function didn't start executing when called as we don't see the print statement; instead, a generator object is returned which can only be iterated over to get the next values. There are simply no other operations that can be performed on the generator object. It's just good for one thing - iteration.&lt;/p&gt;
 &lt;p&gt;Usually generator objects can be hooked up with a for loop (or any looping construct) to produce values like:&lt;/p&gt;
 &lt;p&gt;&lt;br/&gt;&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;evens&lt;/span&gt;
@@ -125,7 +125,8 @@ Generator functions also return an iterator object more formally called as a gen
 &lt;p&gt;&lt;br/&gt;&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;But why didn't it do the same on second attempt?&lt;/strong&gt;&lt;/p&gt;
 &lt;blockquote&gt;
-&lt;p&gt;Unlike lists once the generator object is consumed it can't produce values again. TO generate the values again, we need to call the generator function once again. This clearly depicts that these generated values are not in memory at all, therefore allowing us to treat the data as a stream of items and process them one after the other.&lt;/p&gt;
+&lt;p&gt;Unlike lists, once the generator object is consumed, it can't produce values again. To generate the values again, we need to call the
+  generator function once again. This clearly depicts that these generated values are not in memory at all, therefore allowing us to treat the data as a stream of items and process them one after the other.&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h3 id="under-the-hood"&gt;Under the Hood&lt;/h3&gt;
 &lt;p&gt;The generator functions starts to execute on call to &lt;code&gt;next()&lt;/code&gt;. Any looping construct, calls &lt;code&gt;__next__()&lt;/code&gt; or &lt;code&gt;next()&lt;/code&gt; method on the iterator object implicitly to get the next value.&lt;/p&gt;
@@ -157,7 +158,7 @@ Generator functions also return an iterator object more formally called as a gen
 
 
 &lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: If you are wondering as to why there are two different ways of using &lt;code&gt;next&lt;/code&gt;, read &lt;a href="https://www.python.org/dev/peps/pep-3114/"&gt;PEP 3114&lt;/a&gt; for a better understanding.&lt;/p&gt;
-&lt;p&gt;Everytime &lt;code&gt;next&lt;/code&gt; is called, the code continues to execute until it hits the yield statement again. When no more values are left to produce,  a &lt;code&gt;StopIteration&lt;/code&gt; exception is raised indicating the end of the stream. For loop gracefully exits the iteration process on catching such an exception.&lt;/p&gt;
+&lt;p&gt;Every time &lt;code&gt;next&lt;/code&gt; is called, the code continues to execute until it hits the yield statement again. When no more values are left to produce, a &lt;code&gt;StopIteration&lt;/code&gt; exception is raised indicating the end of the stream. The for loop gracefully exits the iteration process on catching such an exception.&lt;/p&gt;
 &lt;p&gt;&lt;br/&gt;&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;When size of the data is larger than the available memory, then generator functions outperform in terms of speed and memory consumptions as compared to working with temporary lists within our code and iterating over them.&lt;/p&gt;
@@ -165,10 +166,9 @@ Generator functions also return an iterator object more formally called as a gen
 &lt;hr&gt;
 
 &lt;h2 id="building-a-processing-pipeline-using-generator-functions"&gt;Building a processing pipeline using Generator functions&lt;/h2&gt;
-&lt;p&gt;Until now we used generator functions to produce a stream of items, which is generally consumed by a for loop. In this section, we will glue together multiple generator functions and build our very own custom processing pipeline where each generator function acts an individual component in pipeline.&lt;/p&gt;
-&lt;p&gt;Let's consider the following use case:&lt;/p&gt;
+&lt;p&gt;Until now we used generator functions to produce a stream of items, which is generally consumed by a for loop. In this section, we will glue together multiple generator functions and build our very own custom processing pipeline where each generator function acts as an individual component in the pipeline.&lt;/p&gt;
 &lt;h3 id="use-case"&gt;Use Case&lt;/h3&gt;
-&lt;p&gt;We need to filter out our access logs to determine all incoming GET requests which are responded with a 404 HTTP status code in a realtime fashion in order to determine whether or not our application server is getting spammed by unwanting requests.&lt;/p&gt;
+&lt;p&gt;We need to filter out our access logs to determine all incoming GET requests which are get a 404 HTTP status code in a realtime fashion in order to determine whether or not our application server is getting spammed by unwanted requests.&lt;/p&gt;
 &lt;h3 id="our-approach"&gt;Our Approach&lt;/h3&gt;
 &lt;ol&gt;
 &lt;li&gt;
@@ -260,7 +260,7 @@ Generator functions also return an iterator object more formally called as a gen
 &lt;hr&gt;
 
 &lt;h2 id="conclusion"&gt;Conclusion&lt;/h2&gt;
-&lt;p&gt;Iteration is a very basic yet one of the most powerful programming tools. Approaching huge datasets lazily, makes it a lot easier to efficiently process the data by caring about just the next incoming item. Nowadays, many of the data processing tools/products such as Storm, Spark, &lt;a href="https://github.com/spotify/luigi"&gt;Luigi&lt;/a&gt;(built on core Python) and many others are aligned with the same approach of streaming the data in a pipeline with a lot more robustness ofcourse.&lt;/p&gt;
+&lt;p&gt;Iteration is very basic and yet one of the most powerful programming tools. Approaching huge datasets lazily, makes it a lot easier to efficiently process the data by caring about just the next incoming item. Nowadays, many of the data processing tools/products such as Storm, Spark, &lt;a href="https://github.com/spotify/luigi"&gt;Luigi&lt;/a&gt;(built on core Python) and many others are aligned with the same approach of streaming the data in a pipeline with a lot more robustness of course.&lt;/p&gt;
 &lt;p&gt;I hope this post encourages you to breakdown your laborious processes into abstract components and form a pipeline out of it, hence making it more scalable in terms of easier debugging and adding/removing new components within the pipeline.&lt;/p&gt;
 &lt;p&gt;Would love to hear suggestions and feedback.&lt;/p&gt;
 &lt;p&gt;Cheers!&lt;/p&gt;</content><category term="iterable-streams"></category><category term="iterators-generators"></category><category term="efficient-data-processing"></category></entry></feed>
