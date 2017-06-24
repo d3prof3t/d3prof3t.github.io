@@ -192,7 +192,7 @@ Generator functions also return an iterator object more formally called as a gen
 &lt;li&gt;
 &lt;p&gt;Finally, print out the requested route and IP address of that particular request.&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Component Info: &lt;code&gt;get_request_info&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Component name: &lt;code&gt;get_request_info&lt;/code&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
